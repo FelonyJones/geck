@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://cjfgqeqsykx3b"]
+
+[ext_resource type="Script" uid="uid://b41jjxxm4r6jr" path="res://addons/corra-console/console_gui.gd" id="1_ocwku"]
+
+[node name="ConsoleGui" type="EditorDock" unique_id=444343602]
+offset_right = 754.0
+offset_bottom = 145.0
+title = "Console"
+default_slot = 5
+available_layouts = 7
+script = ExtResource("1_ocwku")
+
+[node name="Console" type="VBoxContainer" parent="." unique_id=515580762]
+layout_mode = 2
+
+[node name="Output" type="RichTextLabel" parent="Console" unique_id=70616782]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+focus_mode = 2
+bbcode_enabled = true
+text = "[color=gray][i]Felanie's Cursed Console[/i][/color]
+"
+scroll_following = true
+selection_enabled = true
+
+[node name="Input" type="LineEdit" parent="Console" unique_id=44339040]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "type"
+keep_editing_on_text_submit = true
