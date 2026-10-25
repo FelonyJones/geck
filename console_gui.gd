@@ -1,8 +1,8 @@
 @tool
 extends EditorDock
 
-const GecPlugin := preload("./plugin.gd")
-var plugin: GecPlugin;
+const GeckPlugin := preload("./plugin.gd")
+var plugin: GeckPlugin;
 
 @onready var input: LineEdit = %Input
 @onready var output: RichTextLabel = %Output
@@ -15,7 +15,7 @@ var hist_reverse_index = -1:
 var input_buffer := "";
 
 func _init() -> void:
-	name = "GecGui"
+	name = "GeckGui"
 
 func _ready() -> void:
 	input.text_submitted.connect(_on_command_submitted);

@@ -1,8 +1,8 @@
 @tool
 extends Node
 
-const GecPlugin := preload("./plugin.gd")
-var plugin: GecPlugin;
+const GeckPlugin := preload("./plugin.gd")
+var plugin: GeckPlugin;
 
 const ECHO := &"echo";
 const CLEAR := &"clear";
@@ -17,7 +17,7 @@ var commands : Dictionary[StringName, Callable] = {
 }
 
 func _init() -> void:
-	name = "GecExecutor"
+	name = "GeckExecutor"
 
 func rebuild_context() -> void: plugin.rebuild_context()
 func echo(text) -> void: plugin.echo(text)

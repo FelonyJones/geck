@@ -5,17 +5,17 @@ extends EditorPlugin
 #TODO: Save custom context
 #FIXME: error: Can't take value from empty array
 
-const PLUGIN_NAME := "gec";
-const SINGLETON_NAME = "GecInterface";
-const DEFAULT_SCRIPT_PATH = "res://addons/editor-console/scripts/"
+const PLUGIN_NAME := "geck";
+const SINGLETON_NAME = "GeckInterface";
+const DEFAULT_SCRIPT_PATH = "res://addons/geck/scripts/"
 
-const GecGui := preload("./console_gui.gd");
-const GecInterface := preload("./console_api.gd");
-const GecExecutor := preload("./executor.gd");
+const GeckGui := preload("./console_gui.gd");
+const GeckInterface := preload("./console_api.gd");
+const GeckExecutor := preload("./executor.gd");
 
-var console_gui : GecGui = preload("./console_gui.tscn").instantiate()
-var api := GecInterface.new()
-var executor := GecExecutor.new()
+var console_gui : GeckGui = preload("./console_gui.tscn").instantiate()
+var api := GeckInterface.new()
+var executor := GeckExecutor.new()
 
 var script_path := DEFAULT_SCRIPT_PATH;
 
@@ -29,7 +29,7 @@ var _execution_root = self;
 
 
 func _init() -> void:
-	name = "GecPlugin"
+	name = "GeckPlugin"
 
 
 func _enable_plugin() -> void:
@@ -63,10 +63,10 @@ func search_for_singleton() -> Node:
 func _init_singleton():
 	var singleton = await search_for_singleton();
 	if not singleton:
-		printerr("[GEC] failed to find singleton")
+		printerr("[GEC(K)] failed to find singleton")
 		return;
 	singleton.set("plugin", self);
-	print("[GEC] inited singleton")
+	print("[GEC(K)] inited singleton")
 	print(singleton)
 
 

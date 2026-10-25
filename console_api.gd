@@ -1,12 +1,12 @@
 @tool
 extends Node
 
-const GecPlugin := preload("./plugin.gd")
-var plugin: GecPlugin;
+const GeckPlugin := preload("./plugin.gd")
+var plugin: GeckPlugin;
 
 
 func _init() -> void:
-	name = "GecInterface"
+	name = "GeckInterface"
 
 
 func add_context(name: String, object: Variant):
