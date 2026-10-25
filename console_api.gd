@@ -1,25 +1,15 @@
 @tool
 extends Node
 
-var plugin;
+const GecPlugin := preload("./plugin.gd")
+var plugin: GecPlugin;
 
-var context_queue = {};
 
 func _init() -> void:
-	name = "EditorConsoleApi"
-
-func _enter_tree() -> void:
-	print("added api to tree")
-	pass
-
-
-func _exit_tree() -> void:
-	print("removed api from tree")
-	pass
+	name = "GecInterface"
 
 
 func add_context(name: String, object: Variant):
-	print(plugin)
 	plugin.add_context(name, object);
 
 

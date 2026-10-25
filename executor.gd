@@ -1,8 +1,8 @@
 @tool
-class_name EditorConsoleExecutor
 extends Node
 
-var plugin: EditorConsolePlugin;
+const GecPlugin := preload("./plugin.gd")
+var plugin: GecPlugin;
 
 const ECHO := &"echo";
 const CLEAR := &"clear";
@@ -17,7 +17,7 @@ var commands : Dictionary[StringName, Callable] = {
 }
 
 func _init() -> void:
-	name = "EditorConsoleExecutor"
+	name = "GecExecutor"
 
 func rebuild_context() -> void: plugin.rebuild_context()
 func echo(text) -> void: plugin.echo(text)

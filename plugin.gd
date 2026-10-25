@@ -1,18 +1,21 @@
 @tool
 extends EditorPlugin
-class_name EditorConsolePlugin
 
 #TODO: Save history to disk
 #TODO: Save custom context
 #FIXME: error: Can't take value from empty array
 
-const PLUGIN_NAME := "editor-console";
-const SINGLETON_NAME = "EditorConsoleApi";
+const PLUGIN_NAME := "gec";
+const SINGLETON_NAME = "GecInterface";
 const DEFAULT_SCRIPT_PATH = "res://addons/editor-console/scripts/"
 
-var console_gui := preload("./console_gui.tscn").instantiate()
-var api := preload("./console_api.gd").new()
-var executor := preload("./executor.gd").new()
+const GecGui := preload("./console_gui.gd");
+const GecInterface := preload("./console_api.gd");
+const GecExecutor := preload("./executor.gd");
+
+var console_gui : GecGui = preload("./console_gui.tscn").instantiate()
+var api := GecInterface.new()
+var executor := GecExecutor.new()
 
 var script_path := DEFAULT_SCRIPT_PATH;
 
@@ -20,15 +23,13 @@ var _context : Dictionary[String, Variant] = {}
 var engine_singletons : Dictionary[String, Variant] = {}
 var class_context : Dictionary[String, Variant] = {}
 var custom_context : Dictionary[String, Variant] = {}
-var misc_context : Dictionary[String, Variant] = {
-	"execution_root" : self,
-}
+var misc_context : Dictionary[String, Variant] = {}
 
 var _execution_root = self;
 
 
 func _init() -> void:
-	name = "EditorConsolePlugin"
+	name = "GecPlugin"
 
 
 func _enable_plugin() -> void:
@@ -44,13 +45,40 @@ func get_singleton():
 	return get_tree().root.get_node("/root/" + SINGLETON_NAME)
 
 
+func search_for_singleton() -> Node:
+	var singleton = get_tree().root.get_node_or_null("/root/" + SINGLETON_NAME);
+	var timestamp = Time.get_unix_time_from_system()
+	var timeout = 5;
+
+	while singleton == null:
+		if Time.get_unix_time_from_system() - timestamp > timeout:
+			printerr("[GEC(K)] timed out")
+			return null
+
+		await get_tree().process_frame
+		singleton = get_tree().root.get_node_or_null("/root/" + SINGLETON_NAME);
+	return singleton
+
+
+func _init_singleton():
+	var singleton = await search_for_singleton();
+	if not singleton:
+		printerr("[GEC] failed to find singleton")
+		return;
+	singleton.set("plugin", self);
+	print("[GEC] inited singleton")
+	print(singleton)
+
+
 func _enter_tree() -> void:
 	console_gui.plugin = self;
-	get_singleton().set("plugin", self);
-	add_child(executor);
+	add_dock(console_gui)
+
 	executor.plugin = self;
 	_execution_root = executor;
-	add_dock(console_gui)
+	add_child(executor);
+
+	await _init_singleton();
 
 	_add_static_context()
 	_add_builtin_singletons()

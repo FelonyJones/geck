@@ -1,6 +1,9 @@
 @tool
 extends EditorDock
 
+const GecPlugin := preload("./plugin.gd")
+var plugin: GecPlugin;
+
 @onready var input: LineEdit = %Input
 @onready var output: RichTextLabel = %Output
 
@@ -9,14 +12,14 @@ var hist_reverse_index = -1:
 	set(value):
 		hist_reverse_index = clampi(value, -1, _input_history.size() - 1)
 
-		
 var input_buffer := "";
-var plugin;
+
+func _init() -> void:
+	name = "GecGui"
 
 func _ready() -> void:
 	input.text_submitted.connect(_on_command_submitted);
 	input.gui_input.connect(_on_input_gui_input);
-
 
 func printconsole(text):
 	output.text += str(text) + "\n";
