@@ -5,7 +5,6 @@ extends EditorDock
 @onready var output: RichTextLabel = %Output
 
 var context : Dictionary[String, Variant]= {
-	"test_value" : 4,
 }
 
 var _input_history = [];

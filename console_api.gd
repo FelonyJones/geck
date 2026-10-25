@@ -5,6 +5,9 @@ var plugin;
 
 var context_queue = {};
 
+func _init() -> void:
+	name = "EditorConsoleApi"
+
 func _enter_tree() -> void:
 	print("added api to tree")
 	pass
@@ -16,6 +19,7 @@ func _exit_tree() -> void:
 
 
 func add_context(name: String, object: Variant):
+	print(plugin)
 	plugin.add_context(name, object);
 
 

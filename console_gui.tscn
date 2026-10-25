@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cjfgqeqsykx3b"]
 
-[ext_resource type="Script" uid="uid://b41jjxxm4r6jr" path="res://addons/corra-console/console_gui.gd" id="1_ocwku"]
+[ext_resource type="Script" uid="uid://b41jjxxm4r6jr" path="res://addons/editor-console/console_gui.gd" id="1_ocwku"]
 
 [node name="ConsoleGui" type="EditorDock" unique_id=444343602]
 offset_right = 754.0
@@ -27,5 +27,5 @@ selection_enabled = true
 [node name="Input" type="LineEdit" parent="Console" unique_id=44339040]
 unique_name_in_owner = true
 layout_mode = 2
-placeholder_text = "type"
+placeholder_text = "Enter Command"
 keep_editing_on_text_submit = true
