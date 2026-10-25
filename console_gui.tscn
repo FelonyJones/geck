@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cjfgqeqsykx3b"]
 
-[ext_resource type="Script" uid="uid://b41jjxxm4r6jr" path="res://addons/editor-console/console_gui.gd" id="1_ocwku"]
+[ext_resource type="Script" uid="uid://b41jjxxm4r6jr" path="res://addons/geck/console_gui.gd" id="1_ocwku"]
 
 [node name="ConsoleGui" type="EditorDock" unique_id=444343602]
 offset_right = 754.0
@@ -19,8 +19,6 @@ layout_mode = 2
 size_flags_vertical = 3
 focus_mode = 2
 bbcode_enabled = true
-text = "[color=gray][i]Felanie's Cursed Console[/i][/color]
-"
 scroll_following = true
 selection_enabled = true
 
