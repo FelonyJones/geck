@@ -186,8 +186,11 @@ func try_parse_path(text: String) -> bool:
 	return true;
 
 
+const ExpressionCustom := preload("./parser.gd");
+
+
 func eval_expr(text):
-	var exp := Expression.new()
+	var exp := ExpressionCustom.new()
 	var err: int = exp.parse(text, _context.keys())
 
 	if err != OK:
