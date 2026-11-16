@@ -8,6 +8,7 @@ extends EditorPlugin
 const PLUGIN_NAME := "geck";
 const SINGLETON_NAME = "GeckInterface";
 const DEFAULT_SCRIPT_PATH = "res://addons/geck/scripts/"
+const SETTINGS_PATH = "Addons/GEC(K)/"
 
 const GeckGui := preload("./console_gui.gd");
 const GeckInterface := preload("./console_api.gd");
@@ -17,7 +18,9 @@ var console_gui : GeckGui = preload("./console_gui.tscn").instantiate()
 var api := GeckInterface.new()
 var executor := GeckExecutor.new()
 
-var script_path := DEFAULT_SCRIPT_PATH;
+var script_path : String:
+	get:
+		return ProjectSettings.get_setting("Addons/GEC(K)/scripts_folder");
 
 var _context : Dictionary[String, Variant] = {}
 var engine_singletons : Dictionary[String, Variant] = {}
@@ -35,6 +38,31 @@ func _init() -> void:
 func _enable_plugin() -> void:
 	add_autoload_singleton(SINGLETON_NAME, "./console_api.gd");
 	pass;
+
+
+func _init_settings():
+	_register_setting("scripts_folder", DEFAULT_SCRIPT_PATH, Variant.Type.TYPE_STRING, PROPERTY_HINT_FILE_PATH);
+	_register_setting("default_slot", EditorDock.DockSlot.DOCK_SLOT_BOTTOM_L, Variant.Type.TYPE_INT);
+	pass
+
+
+func _register_setting(path: String, default_value: Variant, type: Variant.Type, hint: int = PROPERTY_HINT_NONE, hint_string: String = "") -> void:
+	if not path.begins_with(SETTINGS_PATH.left(SETTINGS_PATH.length() - 1)):
+		if not path.begins_with("/"): path = "/" + path;
+		path = "Addons/GEC(K)" + path;
+		pass
+	
+	if not ProjectSettings.has_setting(path):
+		ProjectSettings.set_setting(path, default_value);
+	
+	ProjectSettings.set_initial_value(path, default_value);
+	
+	ProjectSettings.add_property_info({
+		"name": path,
+		"type": type,
+		"hint": hint,
+		"hint_string": hint_string
+	});
 
 
 func _disable_plugin() -> void:
@@ -71,6 +99,8 @@ func _init_singleton():
 
 
 func _enter_tree() -> void:
+	_init_settings();
+
 	console_gui.plugin = self;
 	add_dock(console_gui)
 
@@ -124,8 +154,9 @@ func parse_input(text: String):
 
 	if executor.commands.has(args[0]):
 		executor.commands[args[0]].call(args);
-	else:
-		eval_expr(text)
+		return;
+
+	eval_expr(text)
 
 
 func try_parse_path(text: String) -> bool:
