@@ -83,7 +83,7 @@ static func help(context, args: Array[String]):
 
 	elif matches.has("scripts"):
 		var output := "";
-		for path in context.plugin.script_paths:
+		for path in context.plugin.api.script_paths:
 			for file in ResourceLoader.list_directory(path):
 				output += path + file
 				output += "\n"

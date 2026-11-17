@@ -113,8 +113,8 @@ func _get_commands_from_script(script: Script) -> Dictionary[StringName, Diction
 
 
 func parse_input(text: String):
-	if try_parse_path(text): return;
 	var args = text.split(" ");
+	if try_parse_path(args): return;
 
 	if get_commands().has(args[0]):
 		var context = {
@@ -127,31 +127,74 @@ func parse_input(text: String):
 	eval_expr(text)
 
 
-func try_parse_path(text: String) -> bool:
+func try_parse_path(args: Array[String]) -> bool:
+	var text := args[0];
 	var path := text;
 
 	if text.is_relative_path():
 		path = DEFAULT_SCRIPT_PATH + text;
 
-
 	if not ResourceLoader.exists(path):
 		return false;
-
 
 	var script = load(path) as Script;
 	if not script:
 		echoerr("File is not a script: %s" % path);
 		return true;
 
+	var result = run_script(script, "_run", args.slice(1));
 
-	if not script.has_method("_run"):
-		echoerr("Script doesn't contain method \"_run\" method: %s" % path);
+	if result is not Error:
+		echo("Executed script: %s" % path.get_file())
 		return true;
-	
-	echo("Executing script: %s" % path.get_file())
 
-	script.call("_run", get_context())
-	return true;
+	match result:
+		Error.ERR_INVALID_PARAMETER:
+			self.printerr("Arguments don't match method signature \n\targs: " + str(args.slice(1)));
+		_:
+			self.printerr(error_string(result));
+	self.print("\n");
+	return false;
+
+
+
+func has_flag(bitmask: int, flag: int) -> bool:
+	return (bitmask & flag) != 0;
+
+
+func run_script(script: Script, method: StringName, args := []):
+	var methods = script.get_script_method_list();
+	var contains = false;
+	var method_dict: Dictionary; 
+	
+	for dict in methods:
+		if dict.name == method:
+			contains = true;
+			method_dict = dict;
+
+	if not contains:
+		return ERR_METHOD_NOT_FOUND;
+
+	if method_dict.args.size() != args.size():
+		return ERR_INVALID_PARAMETER;
+
+	var is_static = has_flag(method_dict.flags, MethodFlags.METHOD_FLAG_STATIC);
+
+	var script_object;
+	var gdscript = script as GDScript;
+	var csharp = script as CSharpScript;
+
+	if is_static:
+		script_object = script;
+	elif gdscript:
+		script_object = gdscript.new();
+	elif csharp:
+		script_object = csharp.new();
+	else:
+		return FAILED;
+
+	var callable = Callable(script_object, method);
+	return callable.callv(args);
 
 
 func eval_expr(text):
