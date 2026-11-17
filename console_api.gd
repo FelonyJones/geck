@@ -1,19 +1,52 @@
 @tool
 extends Node
 
-const GeckPlugin := preload("./plugin.gd")
+const GeckConsole := GeckPlugin.GeckConsole;
+
+const SETTINGS_PATH := GeckPlugin.SETTINGS_PATH;
+
 var plugin: GeckPlugin;
+
+var console: GeckConsole:
+	get:
+		return plugin.console;
+
+var script_paths : Array[String]:
+	get:
+		return [ProjectSettings.get_setting(SETTINGS_PATH + "scripts_folder")];
+
+var command_script_paths : Array[String]:
+	get:
+		return [];
 
 
 func _init() -> void:
 	name = "GeckInterface"
 
+func get_context() -> Dictionary[String, Variant]:
+	return console.get_context();
+
+
+func execute(text: String):
+	console.parse_input(text);
+
+
+func refresh_context():
+	console.refresh_context();
+
 
 func add_context(name: String, object: Variant):
-	plugin.add_context(name, object);
+	console.add_context(name, object);
 
 
 func remove_context(name: String):
-	plugin.remove_context(name);
+	console.remove_context(name);
 
+
+func print(val):
+	plugin.console_gui.print(val);
+
+
+func printerr(val):
+	plugin.console_gui.printerr(val);
 

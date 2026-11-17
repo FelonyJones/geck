@@ -1,8 +1,10 @@
 @tool
 extends EditorDock
 
-const GeckPlugin := preload("./plugin.gd")
+const GeckInterface := preload("./console_api.gd");
+
 var plugin: GeckPlugin;
+var api : GeckInterface
 
 @onready var input: LineEdit = %Input
 @onready var output: RichTextLabel = %Output
@@ -14,37 +16,49 @@ var hist_reverse_index = -1:
 
 var input_buffer := "";
 
+
 func _init() -> void:
 	name = "GeckGui"
-	theme = EditorInterface.get_editor_theme();
+
 
 func _ready() -> void:
-	output.push_mono();
-	theme = EditorInterface.get_editor_theme();
-	output.theme = theme;
+	# output.push_mono();
+	# var editor_theme = EditorInterface.get_editor_theme();
+	# theme = editor_theme;
 
-	var mono_font = theme.get_font("source", "EditorFonts")
-	output.add_theme_font_override("mono_font", mono_font)
+	# var mono_font = editor_theme.get_font("source", "EditorFonts")
+	# output.add_theme_font_override("mono_font", mono_font)
 	# print(mono_font)
 
 	input.text_submitted.connect(_on_command_submitted);
 	input.gui_input.connect(_on_input_gui_input);
 
+
 func get_error_color() -> Color:
 	var base = EditorInterface.get_base_control()
 	return base.get_theme_color("error_color", "Editor")
 
-func printconsole(text):
+
+func get_mono_font() -> Font:
+	var editor_theme = EditorInterface.get_editor_theme();
+	return editor_theme.get_font("source", "EditorFonts")
+
+
+func print(text):
 	output.push_mono();
+	output.push_font(get_mono_font());
 	output.add_text(str(text) + "\n");
 	# output.text += str(text) + "\n";
 
-func printerrconsole(text):
+
+func printerr(text):
 	output.push_mono();
+	output.push_font(get_mono_font());
 	output.push_color(get_error_color());
 	output.add_text(str(text));
 	output.pop_all()
 	pass
+
 
 func get_reversed(array: Array, reverse_index: int):
 	var forward_index: int = array.size() - 1 - reverse_index;
@@ -63,7 +77,7 @@ func _on_command_submitted(text: String):
 	output.push_mono();
 	output.add_text("\n> " + text + "\n")
 	input.text = "";
-	plugin.parse_input(text);
+	api.execute(text);
 
 
 func _on_input_gui_input(event: InputEvent) -> void:
