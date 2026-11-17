@@ -60,11 +60,13 @@ func get_parent_recursive():
 		parent = parent.get_parent()
 	return parent;
 
+
 func test_child():
 	var new_node = Node.new();
 	new_node.name = "TestNode"
 	add_child(new_node)
 	pass
+
 
 func test():
 	echo(get_node("TestNode").name)

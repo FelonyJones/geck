@@ -16,16 +16,34 @@ var input_buffer := "";
 
 func _init() -> void:
 	name = "GeckGui"
+	theme = EditorInterface.get_editor_theme();
 
 func _ready() -> void:
+	output.push_mono();
+	theme = EditorInterface.get_editor_theme();
+	output.theme = theme;
+
+	var mono_font = theme.get_font("source", "EditorFonts")
+	output.add_theme_font_override("mono_font", mono_font)
+	# print(mono_font)
+
 	input.text_submitted.connect(_on_command_submitted);
 	input.gui_input.connect(_on_input_gui_input);
 
+func get_error_color() -> Color:
+	var base = EditorInterface.get_base_control()
+	return base.get_theme_color("error_color", "Editor")
+
 func printconsole(text):
-	output.text += str(text) + "\n";
+	output.push_mono();
+	output.add_text(str(text) + "\n");
+	# output.text += str(text) + "\n";
 
 func printerrconsole(text):
-	output.text += "[color=red]"+ str(text) + "[/color]\n";
+	output.push_mono();
+	output.push_color(get_error_color());
+	output.add_text(str(text));
+	output.pop_all()
 	pass
 
 func get_reversed(array: Array, reverse_index: int):
@@ -41,7 +59,9 @@ func _on_command_submitted(text: String):
 	if _input_history.back() != cmd:
 		_input_history.append(cmd);
 
-	output.text += "\n> " + text + "\n"
+	
+	output.push_mono();
+	output.add_text("\n> " + text + "\n")
 	input.text = "";
 	plugin.parse_input(text);
 

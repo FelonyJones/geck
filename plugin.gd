@@ -22,13 +22,22 @@ var script_path : String:
 	get:
 		return ProjectSettings.get_setting("Addons/GEC(K)/scripts_folder");
 
+var script_paths : Array[String]:
+	get:
+		return [ProjectSettings.get_setting("Addons/GEC(K)/scripts_folder")];
+
 var _context : Dictionary[String, Variant] = {}
 var engine_singletons : Dictionary[String, Variant] = {}
 var class_context : Dictionary[String, Variant] = {}
 var custom_context : Dictionary[String, Variant] = {}
 var misc_context : Dictionary[String, Variant] = {}
 
+var script_aliases : Dictionary[String, Dictionary] = {}
+
 var _execution_root = self;
+
+var custom_commands : Dictionary[StringName, Dictionary] = {};
+var _commands : Dictionary[StringName, Dictionary] = {};
 
 
 func _init() -> void:
@@ -122,11 +131,37 @@ func _exit_tree() -> void:
 
 
 func rebuild_context():
+	_register_commands();
 	_context = {};
 	_context.merge(engine_singletons);
 	_context.merge(class_context);
 	_context.merge(custom_context);
 	_context.merge(misc_context);
+
+
+func _register_commands():
+	_commands = {};
+	_commands.merge(_get_commands_from_script(preload("./builtin_commands.gd")));
+
+
+func _get_commands_from_script(script: Script) -> Dictionary[StringName, Dictionary]:
+	var commands: Dictionary[StringName, Dictionary] = {};
+	const GET_FUNC_DESCRIPTIONS := "get_func_descriptions";
+
+	for cmd in script.get_script_method_list():
+		if cmd.name == GET_FUNC_DESCRIPTIONS or cmd.name.begins_with("_"):
+			continue;
+		commands[cmd.name] = cmd;
+		commands[cmd.name].callable = Callable(script, cmd.name);
+
+	if script.has_script_method(GET_FUNC_DESCRIPTIONS):
+		var descs: Dictionary = script.callv(GET_FUNC_DESCRIPTIONS, []);
+		for key in descs.keys():
+			if not commands.has(key):
+				continue;
+			commands[key].description = descs[key];
+
+	return commands;
 
 
 func _add_registered_singleton_names() -> void:
@@ -152,8 +187,12 @@ func parse_input(text: String):
 	if try_parse_path(text): return;
 	var args = text.split(" ");
 
-	if executor.commands.has(args[0]):
-		executor.commands[args[0]].call(args);
+	if _commands.has(args[0]):
+		var context = {
+			"plugin" = self,
+			"executor" = executor
+		};
+		_commands[args[0]].callable.call(context, args);
 		return;
 
 	eval_expr(text)
