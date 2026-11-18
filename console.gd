@@ -9,9 +9,14 @@ const PLUGIN_NAME := "geck";
 const SINGLETON_NAME = "GeckInterface";
 const DEFAULT_SCRIPT_PATH = "res://addons/geck/scripts/"
 const SETTINGS_PATH = "Addons/GEC(K)/"
+const BUILTIN_COMMANDS_PATH = "./builtin_commands.gd"
+
+const Command := preload("./command.gd").Command;
+const Arg := preload("./command.gd").Arg;
 
 const GeckGui       := preload("./console_gui.gd");
 const GeckInterface := preload("./console_api.gd");
+const Utils := preload("./utils.gd");
 const BuiltinCommands := preload("./builtin_commands.gd");
 
 var api : GeckInterface;
@@ -25,7 +30,7 @@ var script_aliases : Dictionary[String, Dictionary] = {}
 
 var _execution_root = api;
 
-var custom_commands : Dictionary[StringName, Dictionary] = {};
+var custom_commands : Dictionary[StringName, CommandData] = {};
 
 
 func _init(new_api: GeckInterface) -> void:
@@ -72,31 +77,40 @@ func get_context() -> Dictionary[String, Variant]:
 	return context;
 
 
-func get_commands() -> Dictionary[StringName, Dictionary]: 
-	var commands: Dictionary[StringName, Dictionary] = {};
+func get_commands() -> Dictionary[StringName, CommandData]: 
+	var commands: Dictionary[StringName, CommandData] = {};
 
-	commands.merge(_get_commands_from_script(BuiltinCommands));
+	var get_builtin_command_script_object := Callable(func(): return BuiltinCommands);
+	commands.merge(_get_commands_from_script(BuiltinCommands, get_builtin_command_script_object));
 
 	for path in api.command_script_paths:
-		commands.merge(_get_commands_from_script(load(path)));
+		commands.merge(_get_commands_from_script_path(path));
 
 	commands.merge(custom_commands);
 	return commands;
 
 
-func register_command(name: StringName, func_data: Dictionary):
-	custom_commands[name] = func_data;
+func register_command(name: StringName, data: CommandData):
+	custom_commands[name] = data;
 
 
-func _get_commands_from_script(script: Script) -> Dictionary[StringName, Dictionary]:
-	var commands: Dictionary[StringName, Dictionary] = {};
+func _get_commands_from_script_path(script_path: String) -> Dictionary[StringName, CommandData]:
+	var script = load(script_path) as Script;
+	if not script:
+		return {};
+
+	var get_script := Callable(func(): return load(script_path));
+	return _get_commands_from_script(script, get_script);
+
+
+func _get_commands_from_script(script: Script, func_get_script: Callable) -> Dictionary[StringName, CommandData]:
+	var commands: Dictionary[StringName, CommandData] = {};
 	const GET_FUNC_DESCRIPTIONS := "get_func_descriptions";
 
 	for cmd in script.get_script_method_list():
 		if cmd.name == GET_FUNC_DESCRIPTIONS or cmd.name.begins_with("_"):
 			continue;
-		commands[cmd.name] = cmd;
-		commands[cmd.name].callable = Callable(script, cmd.name);
+		commands[cmd.name] = CommandData.from_dict(cmd, func_get_script);
 
 	if script.has_script_method(GET_FUNC_DESCRIPTIONS):
 		var descs: Dictionary = script.callv(GET_FUNC_DESCRIPTIONS, []);
@@ -108,93 +122,34 @@ func _get_commands_from_script(script: Script) -> Dictionary[StringName, Diction
 	return commands;
 
 
+
 # Parsing
 # ---------------------------------
 
 
 func parse_input(text: String):
 	var args = text.split(" ");
-	if try_parse_path(args): return;
+	if try_run_as_script(args): return;
 
 	if get_commands().has(args[0]):
-		var context = {
-			"plugin" = self,
-			"executor" = _execution_root
-		};
-		get_commands()[args[0]].callable.call(context, args);
-		return;
+		var command_name = args[0];
+		return get_commands()[command_name].run(api, args);
 
 	eval_expr(text)
 
 
-func try_parse_path(args: Array[String]) -> bool:
+func try_run_as_script(args: Array[String]) -> bool:
 	var text := args[0];
 	var path := text;
+	var trimmed_args = args.slice(1);
+	var script_path = Utils.convert_path_to_valid_script_path(path, api.script_paths);
 
-	if text.is_relative_path():
-		path = DEFAULT_SCRIPT_PATH + text;
-
-	if not ResourceLoader.exists(path):
+	if not script_path:
 		return false;
-
-	var script = load(path) as Script;
-	if not script:
-		echoerr("File is not a script: %s" % path);
-		return true;
-
-	var result = run_script(script, "_run", args.slice(1));
-
-	if result is not Error:
-		echo("Executed script: %s" % path.get_file())
-		return true;
-
-	match result:
-		Error.ERR_INVALID_PARAMETER:
-			self.printerr("Arguments don't match method signature \n\targs: " + str(args.slice(1)));
-		_:
-			self.printerr(error_string(result));
-	self.print("\n");
-	return false;
-
-
-
-func has_flag(bitmask: int, flag: int) -> bool:
-	return (bitmask & flag) != 0;
-
-
-func run_script(script: Script, method: StringName, args := []):
-	var methods = script.get_script_method_list();
-	var contains = false;
-	var method_dict: Dictionary; 
 	
-	for dict in methods:
-		if dict.name == method:
-			contains = true;
-			method_dict = dict;
+	var result = get_commands()["run"].run(api, [script_path] + trimmed_args);
 
-	if not contains:
-		return ERR_METHOD_NOT_FOUND;
-
-	if method_dict.args.size() != args.size():
-		return ERR_INVALID_PARAMETER;
-
-	var is_static = has_flag(method_dict.flags, MethodFlags.METHOD_FLAG_STATIC);
-
-	var script_object;
-	var gdscript = script as GDScript;
-	var csharp = script as CSharpScript;
-
-	if is_static:
-		script_object = script;
-	elif gdscript:
-		script_object = gdscript.new();
-	elif csharp:
-		script_object = csharp.new();
-	else:
-		return FAILED;
-
-	var callable = Callable(script_object, method);
-	return callable.callv(args);
+	return result is not Error;
 
 
 func eval_expr(text):
@@ -260,3 +215,55 @@ func echo(text):
 
 func echoerr(text):
 	self.printerr(text);
+
+
+
+class CommandData:
+	var name : StringName;
+	var args : Array[Dictionary];
+	var default_args : Array[Variant];
+	var flags  : MethodFlags;
+	var id     : int;
+	var return_val : Dictionary;
+
+	var description : String;
+
+	var get_script : Callable;
+
+	func _init(
+		_name : StringName,
+		_args : Array[Dictionary],
+		_default_args : Array[Variant],
+		_flags  : MethodFlags,
+		_id     : int,
+		_return_val : Dictionary,
+		_get_script : Callable,
+		
+	) -> void:
+		name = _name
+		args = _args
+		default_args = _default_args 
+		flags = _flags  
+		id = _id     
+		return_val = return_val 
+		get_script = _get_script
+
+
+	func run(api, args):
+		var full_args = [args];
+		if self.args.size() > 0 and self.args[0].name == "api":
+			full_args = [api, args];
+
+		return Utils.run_script(get_script.call(), name, full_args)
+
+
+	static func from_dict(dict: Dictionary, func_get_script : Callable) -> CommandData:
+		return CommandData.new(
+			dict.name,
+			dict.args,
+			dict.default_args,
+			dict.flags,
+			dict.id,
+			dict.return,
+			func_get_script,
+		);

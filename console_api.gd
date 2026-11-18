@@ -19,6 +19,10 @@ var command_script_paths : Array[String]:
 	get:
 		return [];
 
+var execution_root:
+	get:
+		return console._execution_root;
+
 
 func _init() -> void:
 	name = "GeckInterface"
@@ -43,10 +47,14 @@ func remove_context(name: String):
 	console.remove_context(name);
 
 
+func println(val):
+	plugin.console_gui.print(val + "\n");
+
+
 func print(val):
 	plugin.console_gui.print(val);
 
 
 func printerr(val):
-	plugin.console_gui.printerr(val);
+	plugin.console_gui.printerr(val + "\n");
 
